@@ -6,7 +6,7 @@ plugins {
 
 group = 'com.space'
 version = '0.0.1-SNAPSHOT'
-description = 'ai-resume-analyzer'
+description = 'airesumeanalyzer'
 
 java {
     toolchain {
