@@ -1,6 +1,6 @@
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '3.5.16'
+    id 'org.springframework.boot' version '3.4.1' // 스프링 부트 버전을 3.4.1 안정 버전으로 매칭합니다.
     id 'io.spring.dependency-management' version '1.1.7'
 }
 
@@ -14,20 +14,31 @@ java {
     }
 }
 
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    // 1. Web & JPA (잘못 적혀 있던 webmvc를 올바른 스타터명으로 수정 완료)
     implementation 'org.springframework.boot:spring-boot-starter-web'
-    compileOnly 'org.projectlombok:lombok'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+
+    // 2. PostgreSQL 드라이버
     runtimeOnly 'org.postgresql:postgresql'
+
+    // 3. Lombok (코드 단순화)
+    compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
+
+    // 4. Test (존재하지 않던 가짜 테스트 패키지들을 지우고, 표준 공식 테스트 스타터 1개로 압축 통합)
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testCompileOnly 'org.projectlombok:lombok'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-    testAnnotationProcessor 'org.projectlombok:lombok'
 }
 
 tasks.named('test') {

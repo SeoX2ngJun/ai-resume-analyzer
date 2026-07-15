@@ -17,24 +17,20 @@ public class AiReport extends BaseTimeEntity {
     @Column(name = "ai_report_id")
     private Long id;
 
-    @Column(name = "report_content", nullable = false, columnDefinition = "TEXT") // AI가 내뱉은 복잡한 JSON 결과를 통째로 보관합니다.
+    @Column(nullable = false)
+    private int passRate;
+
+    @Column(nullable = false, columnDefinition = "TEXT") // 거대한 결과 JSON 문장을 적재하기 위해 TEXT 명세 지정
     private String reportContent;
 
-    @Column(name = "pass_rate", nullable = false)
-    private Integer passRate;
-
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "document_id", nullable = false, unique = true) // 1:1 관계의 명확한 주인을 선언하며 중복 생성을 완전 차단합니다.
+    @JoinColumn(name = "document_id", nullable = false, unique = true) // unique=true로 데이터 단에서 1:1 무결성을 유지합니다.
     private Document document;
 
     @Builder
-    public AiReport(String reportContent, Integer passRate, Document document) {
-        this.reportContent = reportContent;
+    public AiReport(int passRate, String reportContent, Document document) {
         this.passRate = passRate;
-        this.document = document;
-    }
-
-    public void setDocument(Document document) {
+        this.reportContent = reportContent;
         this.document = document;
     }
 }
