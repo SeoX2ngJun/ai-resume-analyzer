@@ -37,4 +37,4 @@ out/
 .vscode/
 
 ### Custom Secret Files ###
-src/main/resources/application.yml
+backend/airesumeanalyzer/src/main/resources/application.yml
