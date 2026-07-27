@@ -1,48 +1,52 @@
-//분석 데이터 중앙 창고
-// ai 분석중, 분석 결과 데이터, 에러 상태 전역 제어
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { uploadResumeAPI } from '../../api/resumeApi';
+import { uploadResumeApi } from '../../api/resumeApi';
 
-export const uploadAndAnalyzeResume = createAsyncThunk(
-  'resume/uploadAndAnalyze',
-  async (file, { rejectWithValue }) => {
+// 비동기 자소서 업로드 Thunk 액션
+export const uploadResume = createAsyncThunk(
+  'resume/uploadResume',
+  async (fileObject, { rejectWithValue }) => {
     try {
-      const response = await uploadResumeAPI(file);
-      return response.data; 
+      const data = await uploadResumeApi(fileObject);
+      return data;
     } catch (error) {
+      // Axios 인터셉터에서 정제된 에러 메시지 반환
       return rejectWithValue(
-        error.response?.data?.message || '자소서 분석 중 에러가 발생했습니다.'
+        error.response?.data?.message || '자소서 업로드 및 분석에 실패했습니다.'
       );
     }
   }
 );
 
+const initialState = {
+  file: null,
+  status: 'idle', // 'idle' | 'loading' | 'succeeded' | 'failed'
+  reportData: null,
+  error: null,
+};
+
 const resumeSlice = createSlice({
   name: 'resume',
-  initialState: {
-    report: null,
-    loading: false,
-    error: null,
-  },
+  initialState,
   reducers: {
     resetResumeState: (state) => {
-      state.report = null;
-      state.loading = false;
+      state.file = null;
+      state.status = 'idle';
+      state.reportData = null;
       state.error = null;
     },
   },
   extraReducers: (builder) => {
     builder
-      .addCase(uploadAndAnalyzeResume.pending, (state) => {
-        state.loading = true;
+      .addCase(uploadResume.pending, (state) => {
+        state.status = 'loading';
         state.error = null;
       })
-      .addCase(uploadAndAnalyzeResume.fulfilled, (state, action) => {
-        state.loading = false;
-        state.report = action.payload;
+      .addCase(uploadResume.fulfilled, (state, action) => {
+        state.status = 'succeeded';
+        state.reportData = action.payload;
       })
-      .addCase(uploadAndAnalyzeResume.rejected, (state, action) => {
-        state.loading = false;
+      .addCase(uploadResume.rejected, (state, action) => {
+        state.status = 'failed';
         state.error = action.payload;
       });
   },
