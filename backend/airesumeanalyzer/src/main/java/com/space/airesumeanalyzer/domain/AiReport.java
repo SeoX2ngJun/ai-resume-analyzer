@@ -24,7 +24,7 @@ public class AiReport extends BaseTimeEntity {
     private String reportContent;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "document_id", nullable = false, unique = true) // unique=true로 데이터 단에서 1:1 무결성을 유지합니다.
+    @JoinColumn(name = "document_id", nullable = false, unique = true) // unique=true로 데이터 단에서 1:1 무결성을 유지
     private Document document;
 
     @Builder
