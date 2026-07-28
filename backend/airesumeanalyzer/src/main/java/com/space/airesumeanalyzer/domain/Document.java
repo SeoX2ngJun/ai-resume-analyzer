@@ -20,7 +20,7 @@ public class Document extends BaseTimeEntity {
     @Column(nullable = false, length = 255)
     private String fileName;
 
-    @Column(nullable = false, length = 1000)
+    @Column(name = "s3_url", nullable = false, length = 1000)
     private String s3Url;
 
     @Column(columnDefinition = "TEXT") // 대용량 자소서 본문을 온전히 적재하기 위해 PostgreSQL의 TEXT 타입을 지정
