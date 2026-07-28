@@ -1,11 +1,20 @@
-// 자소서 송신 함수
-// 화면에서 넘겨받은 자소서 파일을 FromData 바이너리 규격으로 포장해 백엔드로 전송import axiosInstance from './axiosInstance';
-
 import axiosInstance from './axiosInstance';
 
-export const uploadResumeAPI = (file) => {
+/**
+ * 자소서 파일 업로드 및 AI 분석 요청
+ * @param {File} fileObject - 사용자가 선택한 PDF/Word 파일
+ * @returns {Promise<Object>} 백엔드로부터 반환된 AI 분석 리포트 JSON 데이터
+ */
+export const uploadResumeApi = async (fileObject) => {
   const formData = new FormData();
-  formData.append('file', file); // 백엔드 수신 key값 명칭: 'file'
+  // 백엔드 Spring Boot 컨트롤러의 @RequestPart("file") 또는 @RequestParam("file") 수신 key와 일치
+  formData.append('file', fileObject);
 
-  return axiosInstance.post('/resumes/upload', formData);
+  const response = await axiosInstance.post('/api/resumes/upload', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+
+  return response.data;
 };
