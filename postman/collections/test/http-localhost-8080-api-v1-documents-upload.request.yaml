@@ -1,0 +1,15 @@
+$kind: http-request
+name: http://localhost:8080/api/v1/documents/upload
+description: ""
+url: http://localhost:8080/api/v1/documents/upload
+method: POST
+body:
+  type: formdata
+  content:
+    - type: file
+      key: file
+      src:
+        - /C:/Users/user/OneDrive/Desktop/Test.docx
+      description: ""
+      disabled: false
+order: 1785229646173
