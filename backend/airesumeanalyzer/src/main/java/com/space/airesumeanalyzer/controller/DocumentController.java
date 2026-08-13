@@ -1,5 +1,6 @@
 package com.space.airesumeanalyzer.controller;
 
+import com.space.airesumeanalyzer.dto.AiReportResponse;
 import com.space.airesumeanalyzer.dto.DocumentUploadResponse;
 import com.space.airesumeanalyzer.service.DocumentService;
 import com.space.airesumeanalyzer.service.FileParserService;
@@ -37,6 +38,15 @@ public class DocumentController {
                 extractedText
         );
 
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * AI 분석 결과 리포트 상세 조회 엔드포인트
+     */
+    @GetMapping("/{documentId}/report")
+    public ResponseEntity<AiReportResponse> getDocumentReport(@PathVariable("documentId") Long documentId) {
+        AiReportResponse response = documentService.getDocumentReport(documentId);
         return ResponseEntity.ok(response);
     }
 }
