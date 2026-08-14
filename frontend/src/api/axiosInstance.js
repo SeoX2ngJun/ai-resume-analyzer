@@ -1,10 +1,10 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+// const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
 // 1. 공통 설정을 가진 Axios 인스턴스 생성
 const axiosInstance = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: '/api',
   timeout: 60000, // AI 분석 대기 시간을 고려하여 60초로 설정
   headers: {
     'Content-Type': 'application/json',

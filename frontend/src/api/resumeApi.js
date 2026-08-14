@@ -5,16 +5,18 @@ import axiosInstance from './axiosinstance';
  * @param {File} fileObject - 사용자가 선택한 PDF/Word 파일
  * @returns {Promise<Object>} 분석 완료된 문서 정보 (documentId 등)
  */
+
 export const uploadResumeApi = async (fileObject) => {
   const formData = new FormData();
   formData.append('file', fileObject);
 
   // axiosInstance 인터셉터가 response.data를 반환하므로 데이터 추출 과정 생략
-  return await axiosInstance.post('/api/v1/documents/upload', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-  });
+  //return await axiosInstance.post('/api/v1/documents/upload', formData, {
+  //  headers: {
+  //   'Content-Type': 'multipart/form-data',
+  //  },
+  //})
+  return await axiosInstance.post('/api/v1/documents/upload', formData);
 };
 
 /**
