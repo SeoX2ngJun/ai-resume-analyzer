@@ -10,6 +10,9 @@ import com.space.airesumeanalyzer.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.space.airesumeanalyzer.dto.AiAnalysisResult;
 
 @Service
 @RequiredArgsConstructor
@@ -18,6 +21,7 @@ public class DocumentService {
     private final DocumentRepository documentRepository;
     private final UserRepository userRepository;
     private final AiAnalysisService aiAnalysisService;
+    private final ObjectMapper objectMapper;
 
     @Transactional
     public DocumentUploadResponse saveDocumentMetadata(Long userId, String fileName, String s3Url, String extractedText) {
@@ -52,24 +56,63 @@ public class DocumentService {
      */
     @Transactional(readOnly = true)
     public AiReportResponse getDocumentReport(Long documentId) {
+
         Document document = documentRepository.findById(documentId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 문서 ID입니다: " + documentId));
+                .orElseThrow(() ->
+                        new IllegalArgumentException(
+                                "존재하지 않는 문서 ID입니다: " + documentId
+                        )
+                );
 
         if (document.getAiReport() == null) {
-            throw new IllegalStateException("해당 문서에 대한 AI 분석 리포트가 아직 생성되지 않았습니다.");
+            throw new IllegalStateException(
+                    "해당 문서에 대한 AI 분석 리포트가 아직 생성되지 않았습니다."
+            );
         }
 
         AiReport report = document.getAiReport();
 
-        AiReportResponse.ReportDetail reportDetail = AiReportResponse.ReportDetail.builder()
-                .summary(report.getReportContent())
-                .passRate(report.getPassRate())
-                .build();
+        try {
 
-        return AiReportResponse.builder()
-                .documentId(document.getId())
-                .fileName(document.getFileName())
-                .aiReport(reportDetail)
-                .build();
+            AiAnalysisResult analysisResult =
+                    objectMapper.readValue(
+                            report.getReportContent(),
+                            AiAnalysisResult.class
+                    );
+
+            AiReportResponse.ReportDetail reportDetail =
+                    AiReportResponse.ReportDetail.builder()
+
+                            .summary(
+                                    analysisResult.getSummary()
+                            )
+
+                            .strengths(
+                                    analysisResult.getStrengths()
+                            )
+
+                            .weaknesses(
+                                    analysisResult.getWeaknesses()
+                            )
+
+                            .passRate(
+                                    analysisResult.getPassRate()
+                            )
+
+                            .build();
+
+            return AiReportResponse.builder()
+                    .documentId(document.getId())
+                    .fileName(document.getFileName())
+                    .aiReport(reportDetail)
+                    .build();
+
+        } catch (JsonProcessingException e) {
+
+            throw new IllegalStateException(
+                    "저장된 AI 분석 결과를 읽는 중 오류가 발생했습니다.",
+                    e
+            );
+        }
     }
 }
