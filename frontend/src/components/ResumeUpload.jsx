@@ -1,5 +1,6 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import { uploadResume, resetResumeState } from '../store/slices/resumeSlice';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB 제한
@@ -7,12 +8,27 @@ const ALLOWED_EXTENSIONS = ['pdf', 'doc', 'docx'];
 
 const ResumeUpload = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
+
   const { status, reportData, error } = useSelector((state) => state.resume);
 
   const [selectedFile, setSelectedFile] = useState(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [validationError, setValidationError] = useState('');
   const fileInputRef = useRef(null);
+
+  // 업로드 및 분석 성공 시 라우팅 처리 (화면 전환)
+  useEffect(() => {
+    if (status === 'succeeded' && reportData) {
+      // 백엔드 응답 JSON 규격에 맞춰 documentId 추출
+      const documentId = reportData.documentId || reportData.id; 
+      
+      if (documentId) {
+        dispatch(resetResumeState()); // 전역 상태 초기화
+        navigate(`/report/${documentId}`); // 리포트 전용 상세 페이지로 이동
+      }
+    }
+  }, [status, reportData, navigate, dispatch]);
 
   // 파일 유효성 검증
   const validateFile = (file) => {
@@ -71,15 +87,6 @@ const ResumeUpload = () => {
     dispatch(uploadResume(selectedFile));
   };
 
-  const handleReset = () => {
-    setSelectedFile(null);
-    setValidationError('');
-    dispatch(resetResumeState());
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-
   return (
     <div style={{ maxWidth: '600px', margin: '40px auto', padding: '20px', border: '1px solid #e0e0e0', borderRadius: '8px' }}>
       <h2>AI 자기소개서 분석 요청</h2>
@@ -134,18 +141,6 @@ const ResumeUpload = () => {
           {status === 'loading' ? 'AI 리포트 분석 중...' : '자소서 분석 시작'}
         </button>
       </form>
-
-      {status === 'succeeded' && reportData && (
-        <div style={{ marginTop: '30px', padding: '15px', backgroundColor: '#e9f7ef', borderRadius: '4px' }}>
-          <h3>AI 분석 리포트 결과</h3>
-          <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
-            {JSON.stringify(reportData, null, 2)}
-          </pre>
-          <button onClick={handleReset} style={{ marginTop: '10px', padding: '8px 16px' }}>
-            다른 자소서 분석하기
-          </button>
-        </div>
-      )}
     </div>
   );
 };
