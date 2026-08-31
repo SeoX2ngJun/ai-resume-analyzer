@@ -23,26 +23,40 @@ public class Document extends BaseTimeEntity {
     @Column(name = "s3_url", nullable = false, length = 1000)
     private String s3Url;
 
-    @Column(columnDefinition = "TEXT") // 대용량 자소서 본문을 온전히 적재하기 위해 PostgreSQL의 TEXT 타입을 지정
+    @Column(columnDefinition = "TEXT")
     private String extractedText;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private String status;
+    private DocumentStatus status;
 
-    @ManyToOne(fetch = FetchType.LAZY) // N+1 문제 방지를 위해 무조건 지연 로딩을 선언
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    // 일대일 양방향 관계로, 자소서 삭제 시 AI 분석 리포트 데이터가 고아로 남아 누수되는 현상을 원천 차단
-    @OneToOne(mappedBy = "document", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToOne(
+            mappedBy = "document",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
     private AiReport aiReport;
 
     @Builder
-    public Document(String fileName, String s3Url, String extractedText, String status, User user) {
+    public Document(
+            String fileName,
+            String s3Url,
+            String extractedText,
+            DocumentStatus status,
+            User user
+    ) {
         this.fileName = fileName;
         this.s3Url = s3Url;
         this.extractedText = extractedText;
         this.status = status;
         this.user = user;
+    }
+
+    public void changeStatus(DocumentStatus status) {
+        this.status = status;
     }
 }

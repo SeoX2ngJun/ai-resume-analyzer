@@ -1,8 +1,12 @@
 package com.space.airesumeanalyzer.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.space.airesumeanalyzer.domain.AiReport;
 import com.space.airesumeanalyzer.domain.Document;
+import com.space.airesumeanalyzer.domain.DocumentStatus;
 import com.space.airesumeanalyzer.domain.User;
+import com.space.airesumeanalyzer.dto.AiAnalysisResult;
 import com.space.airesumeanalyzer.dto.AiReportResponse;
 import com.space.airesumeanalyzer.dto.DocumentUploadResponse;
 import com.space.airesumeanalyzer.repository.DocumentRepository;
@@ -10,9 +14,6 @@ import com.space.airesumeanalyzer.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.space.airesumeanalyzer.dto.AiAnalysisResult;
 
 @Service
 @RequiredArgsConstructor
@@ -23,88 +24,86 @@ public class DocumentService {
     private final AiAnalysisService aiAnalysisService;
     private final ObjectMapper objectMapper;
 
-    @Transactional
-    public DocumentUploadResponse saveDocumentMetadata(Long userId, String fileName, String s3Url, String extractedText) {
+    public DocumentUploadResponse saveDocumentMetadata(
+            Long userId,
+            String fileName,
+            String s3Url,
+            String extractedText
+    ) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 유저입니다. ID: " + userId));
+                .orElseThrow(() ->
+                        new IllegalArgumentException("존재하지 않는 사용자입니다."));
 
-        // 1. Document 엔티티 저장
+        // 문서 생성 직후에는 아직 AI 분석이 끝나지 않았으므로 PROCESSING
         Document document = Document.builder()
                 .fileName(fileName)
                 .s3Url(s3Url)
                 .extractedText(extractedText)
-                .status("SUCCESS")
+                .status(DocumentStatus.PROCESSING)
                 .user(user)
                 .build();
 
-        Document savedDocument = documentRepository.save(document);
+        // PROCESSING 상태를 먼저 DB에 저장
+        document = documentRepository.saveAndFlush(document);
 
-        // 2. OpenAI API 연동 및 AiReport 영속화 호출
-        aiAnalysisService.analyzeAndSaveReport(savedDocument, extractedText);
+        try {
+            // AI 분석 및 AiReport 저장
+            aiAnalysisService.analyzeAndSaveReport(document, extractedText);
 
-        // 3. 응답 DTO 반환
+            // AI 분석 성공
+            document.changeStatus(DocumentStatus.SUCCESS);
+            documentRepository.save(document);
+
+        } catch (Exception e) {
+
+            // AI 분석 실패
+            document.changeStatus(DocumentStatus.FAILED);
+            documentRepository.save(document);
+
+            throw e;
+        }
+
         return DocumentUploadResponse.builder()
-                .documentId(savedDocument.getId())
-                .fileName(savedDocument.getFileName())
-                .status(savedDocument.getStatus())
-                .createdAt(savedDocument.getCreatedAt())
+                .documentId(document.getId())
+                .fileName(document.getFileName())
+                .status(document.getStatus().name())
+                .createdAt(document.getCreatedAt())
                 .build();
     }
 
-    /**
-     * AI 분석 결과 리포트 상세 조회 비즈니스 로직
-     */
     @Transactional(readOnly = true)
     public AiReportResponse getDocumentReport(Long documentId) {
 
         Document document = documentRepository.findById(documentId)
                 .orElseThrow(() ->
-                        new IllegalArgumentException(
-                                "존재하지 않는 문서 ID입니다: " + documentId
-                        )
-                );
-
-        if (document.getAiReport() == null) {
-            throw new IllegalStateException(
-                    "해당 문서에 대한 AI 분석 리포트가 아직 생성되지 않았습니다."
-            );
-        }
+                        new IllegalArgumentException("존재하지 않는 문서입니다."));
 
         AiReport report = document.getAiReport();
 
-        try {
+        if (report == null) {
+            throw new IllegalStateException(
+                    "아직 AI 분석 결과가 존재하지 않습니다."
+            );
+        }
 
+        try {
             AiAnalysisResult analysisResult =
                     objectMapper.readValue(
                             report.getReportContent(),
                             AiAnalysisResult.class
                     );
 
-            AiReportResponse.ReportDetail reportDetail =
-                    AiReportResponse.ReportDetail.builder()
-
-                            .summary(
-                                    analysisResult.getSummary()
-                            )
-
-                            .strengths(
-                                    analysisResult.getStrengths()
-                            )
-
-                            .weaknesses(
-                                    analysisResult.getWeaknesses()
-                            )
-
-                            .passRate(
-                                    analysisResult.getPassRate()
-                            )
-
-                            .build();
-
             return AiReportResponse.builder()
                     .documentId(document.getId())
                     .fileName(document.getFileName())
-                    .aiReport(reportDetail)
+                    .aiReport(
+                            AiReportResponse.ReportDetail.builder()
+                                    .summary(analysisResult.getSummary())
+                                    .strengths(analysisResult.getStrengths())
+                                    .weaknesses(analysisResult.getWeaknesses())
+                                    .passRate(analysisResult.getPassRate())
+                                    .build()
+                    )
                     .build();
 
         } catch (JsonProcessingException e) {
