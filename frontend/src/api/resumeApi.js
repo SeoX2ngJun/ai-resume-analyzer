@@ -16,7 +16,7 @@ export const uploadResumeApi = async (fileObject) => {
   //   'Content-Type': 'multipart/form-data',
   //  },
   //})
-  return await axiosInstance.post('/api/v1/documents/upload', formData);
+  return await axiosInstance.post('/v1/documents/upload', formData);
 };
 
 /**
@@ -25,7 +25,7 @@ export const uploadResumeApi = async (fileObject) => {
  * @returns {Promise<Object>} AI 리포트 상세 데이터
  */
 export const getDocumentReportApi = async (documentId) => {
-  return await axiosInstance.get(`/api/v1/documents/${documentId}/report`);
+  return await axiosInstance.get(`/v1/documents/${documentId}/report`);
 };
 
 /**
@@ -33,5 +33,5 @@ export const getDocumentReportApi = async (documentId) => {
  * @returns {Promise<Array>} 과거 분석 내역 리스트
  */
 export const getDocumentListApi = async () => {
-  return await axiosInstance.get('/api/v1/documents');
+  return await axiosInstance.get('/v1/documents');
 };
