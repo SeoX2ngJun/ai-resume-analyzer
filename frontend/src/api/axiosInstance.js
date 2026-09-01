@@ -6,9 +6,7 @@ import axios from 'axios';
 const axiosInstance = axios.create({
   baseURL: '/api',
   timeout: 60000, // AI 분석 대기 시간을 고려하여 60초로 설정
-  headers: {
-    'Content-Type': 'application/json',
-  },
+ 
 });
 
 // 2. 요청 인터셉터: 프론트엔드에서 백엔드로 요청 보내기 직전에 작동함
